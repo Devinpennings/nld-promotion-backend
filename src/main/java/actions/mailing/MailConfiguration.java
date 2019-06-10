@@ -1,22 +1,36 @@
 package actions.mailing;
 
+import util.properties.Property;
+
+import javax.ejb.Singleton;
+import javax.inject.Inject;
+
+@Singleton
 public class MailConfiguration {
 
+    @Inject
+    @Property("mail.hostname")
     private String hostname;
-    private int smtpPort;
-    private String username;
-    private String password;
-    private boolean useSsl;
-    private String email;
 
-    public MailConfiguration(String hostname, int smtpPort, String username, String password, boolean useSsl, String email) {
-        this.hostname = hostname;
-        this.smtpPort = smtpPort;
-        this.username = username;
-        this.password = password;
-        this.useSsl = useSsl;
-        this.email = email;
-    }
+    @Inject
+    @Property("mail.smtp")
+    private int smtpPort;
+
+    @Inject
+    @Property("mail.username")
+    private String username;
+
+    @Inject
+    @Property("mail.password")
+    private String password;
+
+    @Inject
+    @Property("mail.ssl")
+    private boolean useSsl;
+
+    @Inject
+    @Property("mail.email")
+    private String email;
 
     public String getHostname() {
         return this.hostname;

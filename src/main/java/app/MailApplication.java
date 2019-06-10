@@ -1,3 +1,6 @@
+package app;
+
+import events.EventService;
 import util.logging.Logger;
 
 import javax.annotation.PostConstruct;

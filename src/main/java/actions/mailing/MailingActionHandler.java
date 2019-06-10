@@ -13,6 +13,9 @@ public class MailingActionHandler implements ActionHandler<MailingActionConfigur
     @Inject
     private MailService service;
 
+    @Inject
+    private MailConfiguration configuration;
+
     @Override
     public void handle(MailingActionConfiguration configuration, FluidKeyValueModel value) {
 
@@ -22,7 +25,7 @@ public class MailingActionHandler implements ActionHandler<MailingActionConfigur
 
         try {
             configuration.getTemplate().seed(value.get());
-            this.service.send(configuration.getConfiguration(), configuration.getTemplate(), (String) value.get(configuration.getEmailField(), String.class));
+            this.service.send(this.configuration, configuration.getTemplate(), (String) value.get(configuration.getEmailField(), String.class));
         } catch (Exception e) {
             e.printStackTrace();
         }

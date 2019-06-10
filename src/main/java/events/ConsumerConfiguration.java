@@ -2,7 +2,7 @@ package events;
 
 import model.fluid.FluidModel;
 
-public interface EventConfiguration {
+public interface ConsumerConfiguration {
 
     String getEventName();
 

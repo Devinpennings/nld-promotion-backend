@@ -31,6 +31,10 @@ public class PropertyProducer {
 
     @Property
     @Produces
+    public Properties produceProperties(final InjectionPoint ip) { return this.properties; }
+
+    @Property
+    @Produces
     public LogLevel produceLogLevel(final InjectionPoint ip) {
         String value = this.properties.getProperty(getKey(ip));
         return LogLevel.valueOf(value);

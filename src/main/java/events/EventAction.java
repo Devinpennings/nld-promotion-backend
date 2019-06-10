@@ -4,16 +4,16 @@ import actions.ActionConfiguration;
 
 public class EventAction {
 
-    private EventConfiguration eventConfiguration;
+    private ConsumerConfiguration consumerConfiguration;
     private ActionConfiguration actionConfiguration;
 
-    public EventAction(EventConfiguration eventConfiguration, ActionConfiguration actionConfiguration) {
-        this.eventConfiguration = eventConfiguration;
+    public EventAction(ConsumerConfiguration consumerConfiguration, ActionConfiguration actionConfiguration) {
+        this.consumerConfiguration = consumerConfiguration;
         this.actionConfiguration = actionConfiguration;
     }
 
-    public EventConfiguration getEventConfiguration() {
-        return this.eventConfiguration;
+    public ConsumerConfiguration getConsumerConfiguration() {
+        return this.consumerConfiguration;
     }
 
     public ActionConfiguration getActionConfiguration() {

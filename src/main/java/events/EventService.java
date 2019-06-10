@@ -1,12 +1,10 @@
+package events;
+
 import actions.ActionConfiguration;
 import actions.ActionHandler;
-import actions.mailing.MailConfiguration;
 import actions.mailing.MailTemplate;
 import actions.mailing.MailingActionConfiguration;
-import events.EventAction;
-import events.EventConfiguration;
-import events.EventConsumer;
-import events.kafka.KafkaEventConfiguration;
+import events.kafka.KafkaConsumerConfiguration;
 import model.fluid.FluidKeyValueModel;
 import model.fluid.FluidModel;
 import org.reflections.Reflections;
@@ -16,7 +14,10 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Singleton
 public class EventService {
@@ -35,7 +36,7 @@ public class EventService {
 
     public void start() {
 
-        this.logger.info("Starting EventService...");
+        this.logger.info("Starting events.EventService...");
 
         this.initConsumers(this.scanEventConsumers());
         this.initHandlers(this.scanActionHandlers());
@@ -44,8 +45,8 @@ public class EventService {
 
         eventActions.forEach(ea -> {
 
-            Optional<EventConsumer> consumer = this.findEventConsumer(ea.getEventConfiguration());
-            consumer.ifPresent(eventConsumer -> eventConsumer.listen(ea.getEventConfiguration(), value -> {
+            Optional<EventConsumer> consumer = this.findEventConsumer(ea.getConsumerConfiguration());
+            consumer.ifPresent(eventConsumer -> eventConsumer.listen(ea.getConsumerConfiguration(), value -> {
 
                 Optional<ActionHandler> handler = this.findActionHandler(ea.getActionConfiguration());
                 handler.ifPresent(actionHandler -> actionHandler.handle(ea.getActionConfiguration(), value));
@@ -56,7 +57,7 @@ public class EventService {
 
         this.consumers.forEach(EventConsumer::start);
 
-        this.logger.info("EventService started successfully.");
+        this.logger.info("events.EventService started successfully.");
 
     }
 
@@ -77,15 +78,8 @@ public class EventService {
         FluidModel model = new FluidKeyValueModel(requiredFields);
         set.add(
             new EventAction(
-                new KafkaEventConfiguration("payments", "paymentCreated", model),
-                new MailingActionConfiguration(model, "email", new MailConfiguration(
-                    "smtp.googlemail.com",
-                        465,
-                        "nextleveldining.pulr@gmail.com",
-                        "Pulr123!",
-                        true,
-                        "nextleveldining.pulr@gmail.com"
-                        ), new MailTemplate("Betaling geslaagd!",
+                new KafkaConsumerConfiguration("payments", "paymentCreated", model),
+                new MailingActionConfiguration(model, "email", new MailTemplate("Betaling geslaagd", "Deze template wordt gebruikt wanneer een betaling geslaagd is", "Betaling geslaagd!",
                         "<html>\n" +
                         " <head>\n" +
                         "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
@@ -102,9 +96,23 @@ public class EventService {
         return set;
     }
 
-    private Optional<EventConsumer> findEventConsumer(EventConfiguration eventConfiguration) {
+    public Set<Class<? extends EventConsumer>> scanEventConsumers() {
+
+        Reflections reflections = new Reflections("events");
+        return reflections.getSubTypesOf(EventConsumer.class);
+
+    }
+
+    public Set<Class<? extends ActionHandler>> scanActionHandlers() {
+
+        Reflections reflections = new Reflections("actions");
+        return reflections.getSubTypesOf(ActionHandler.class);
+
+    }
+
+    private Optional<EventConsumer> findEventConsumer(ConsumerConfiguration consumerConfiguration) {
         return this.consumers.stream()
-                                .filter(c -> c.handlesConfiguration(eventConfiguration))
+                                .filter(c -> c.handlesConfiguration(consumerConfiguration))
                                 .findFirst();
     }
 
@@ -122,20 +130,6 @@ public class EventService {
 
     private void initHandlers(Set<Class<? extends ActionHandler>> types) {
         types.forEach(type -> this.handlers.add(CDI.current().select(type).get()));
-    }
-
-    private Set<Class<? extends EventConsumer>> scanEventConsumers() {
-
-        Reflections reflections = new Reflections("events");
-        return reflections.getSubTypesOf(EventConsumer.class);
-
-    }
-
-    private Set<Class<? extends ActionHandler>> scanActionHandlers() {
-
-        Reflections reflections = new Reflections("actions");
-        return reflections.getSubTypesOf(ActionHandler.class);
-
     }
 
 }

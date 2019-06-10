@@ -1,15 +1,15 @@
 package events.kafka;
 
-import events.EventConfiguration;
+import events.ConsumerConfiguration;
 import model.fluid.FluidModel;
 
-public class KafkaEventConfiguration implements EventConfiguration {
+public class KafkaConsumerConfiguration implements ConsumerConfiguration {
 
     private String topicName;
     private String eventName;
     private FluidModel response;
 
-    public KafkaEventConfiguration(String topicName, String eventName, FluidModel expectedResponse) {
+    public KafkaConsumerConfiguration(String topicName, String eventName, FluidModel expectedResponse) {
         this.topicName = topicName;
         this.eventName = eventName;
         this.response = expectedResponse;

@@ -9,10 +9,14 @@ public interface EventConsumer {
 
     void stop();
 
-    void listen(EventConfiguration configuration, Callback<FluidModel> callback);
+    void listen(ConsumerConfiguration configuration, Callback<FluidModel> callback);
 
-    void ignore(EventConfiguration configuration);
+    void ignore(ConsumerConfiguration configuration);
 
-    boolean handlesConfiguration(EventConfiguration configuration);
+    Class<? extends ConsumerConfiguration> getConfigurationType();
+
+    boolean handlesConfiguration(ConsumerConfiguration configuration);
+
+    String getId();
 
 }
