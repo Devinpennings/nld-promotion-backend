@@ -1,0 +1,56 @@
+image: maven:3.3.9
+
+stages:
+  - maven_build
+  - docker_build
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  DOCKER_DRIVER: overlay2
+  DOCKER_IMAGE_NAME: eu.gcr.io/pulr-kubernetes/mail-service
+  APP_PORT: 8080
+  APP_NAME: mail-service
+
+cache:
+  paths:
+    - .m2/repository/
+
+services:
+  - docker:dind
+
+#build and package app
+maven_build:
+  stage: maven_build
+  script:
+    - mvn install -DskipTests
+  artifacts:
+    paths:
+      - target/
+
+# buld docker image
+docker_build:
+  stage: docker_build
+  image: docker:stable
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME .
+    - echo $GCLOUD_SERVICE_KEY | base64 -d | docker login -u "_json_key" --password-stdin https://eu.gcr.io
+    - docker tag $DOCKER_IMAGE_NAME $DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $DOCKER_IMAGE_NAME:$CI_COMMIT_SHA
+  tags:
+    - docker
+
+deploy_production:
+  stage: deploy
+  image: devth/helm:v2.13.0
+  only:
+    - release
+    - master
+  when: manual
+  script:
+    - echo $GCLOUD_KUBERNETES_KEY | base64 -d > kubernetes.json
+    - gcloud auth activate-service-account --key-file kubernetes.json
+    - gcloud config set project $GCLOUD_PROJECT_ID
+    - gcloud container clusters get-credentials $GCLOUD_PRODUCTION_CLUSTER_NAME --zone $GCLOUD_ZONE --project $GCLOUD_PROJECT_ID
+    - helm repo add pulr https://pulr.gitlab.io/integration/helm-charts
+    - helm repo update && helm upgrade --install pulr-mail pulr/service -f production.yaml --set image.tag=$CI_COMMIT_SHA
