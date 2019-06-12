@@ -6,7 +6,6 @@ import dto.MailTemplateDTO;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.PathParam;
 import java.util.Collection;
 import java.util.Optional;
 

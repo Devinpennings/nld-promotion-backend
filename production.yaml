@@ -1,0 +1,23 @@
+image:
+  repository: eu.gcr.io/pulr-kubernetes/mail-service
+  tag: 0.0.7
+  pullPolicy: IfNotPresent
+
+web:
+  replicas: 1
+  port: 8080
+  healthcheck: /
+  initializationCommand:
+    - /opt/jboss/wildfly/bin/standalone.sh
+    - -b
+    - 0.0.0.0
+  memoryLimit: 512
+  cpuLimit: 500
+
+# letsencrypt:
+#   enabled: true
+#   server: 'https://acme-v02.api.letsencrypt.org/directory'
+#   email: s.gies21@gmail.com
+
+hosts:
+  - 'mail.pulr.tk'
