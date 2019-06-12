@@ -1,13 +1,14 @@
 package dto;
 
-import java.util.Collection;
+import java.util.Set;
 
 public class MailTemplateDTO {
 
+    public String id;
     public String title;
     public String description;
     public String html;
     public String subject;
-    public Collection<String> requiredFields;
+    public Set<String> requiredFields;
 
 }

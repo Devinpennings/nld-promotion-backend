@@ -3,6 +3,7 @@ package service;
 import actions.mailing.MailTemplate;
 import data.jpa.MailTemplateJPADAO;
 import dto.MailTemplateDTO;
+import javafx.util.Builder;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -29,5 +30,20 @@ public class MailService {
         MailTemplate template = new MailTemplate(dto.title, dto.description, dto.subject, dto.html, dto.requiredFields);
         return this.mailTemplateDAO.add(template);
 
+    }
+
+    public Optional<MailTemplate> updateTemplate(MailTemplateDTO dto) {
+
+        Optional<MailTemplate> template = this.mailTemplateDAO.get(dto.id);
+        if (template.isPresent()) {
+            MailTemplate updated = template.get();
+            updated.setSubject(dto.subject);
+            updated.setDescription(dto.description);
+            updated.setHtml(dto.html);
+            updated.setTitle(dto.title);
+            updated.setRequiredFields(dto.requiredFields);
+            return this.mailTemplateDAO.update(updated);
+        }
+        return Optional.empty();
     }
 }

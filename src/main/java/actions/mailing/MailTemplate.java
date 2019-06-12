@@ -4,9 +4,7 @@ import com.google.common.primitives.Primitives;
 import model.Model;
 
 import javax.persistence.*;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Entity
 public class MailTemplate extends Model {
@@ -14,26 +12,27 @@ public class MailTemplate extends Model {
     private String title;
     private String description;
     private String subject;
+
+    @Column(columnDefinition="text")
     private String html;
 
-    @ElementCollection(fetch= FetchType.EAGER)
-    @CollectionTable(name = "mail_template_params")
-    @MapKeyColumn(name = "field")
-    @Column(name = "value")
-    private Map<String, String> parameters;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> fields = new HashSet<>();
+
+    @Transient
+    private Map<String, String> parameters = new HashMap<>();
 
     public MailTemplate(String subject, String html) {
         this.subject = subject;
         this.html = html;
     }
 
-    public MailTemplate(String title, String description, String subject, String html, Collection<String> keys) {
+    public MailTemplate(String title, String description, String subject, String html, Set<String> keys) {
         this.title = title;
         this.description = description;
         this.subject = subject;
         this.html = html;
-        this.parameters = new HashMap<>();
-        keys.forEach(k -> this.parameters.put(k, null));
+        this.fields = keys;
     }
 
     public MailTemplate() {
@@ -71,6 +70,13 @@ public class MailTemplate extends Model {
         return this.subject;
     }
 
+    public void setRequiredFields(Collection<String> fields) {
+
+        this.parameters.clear();
+        fields.forEach(k -> this.parameters.put(k, null));
+
+    }
+
     public void seed(Map<String, Object> values) throws Exception {
 
         if (!values.values().stream().allMatch(k -> k instanceof  String || Primitives.isWrapperType(k.getClass()) || Primitives.allPrimitiveTypes().contains(k.getClass()))) {
@@ -81,12 +87,31 @@ public class MailTemplate extends Model {
             throw new Exception("Failed to parse incoming data, not all keys present.");
         }
 
-        for (String key : this.parameters.keySet()) {
+        for (String key : this.fields) {
 
-            this.parameters.replace(key, values.get(key).toString());
+            this.parameters.put(key, values.get(key).toString());
 
         }
 
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public void setHtml(String html) {
+        this.html = html;
+    }
+
+    public void setParameters(Map<String, String> parameters) {
+        this.parameters = parameters;
+    }
 }

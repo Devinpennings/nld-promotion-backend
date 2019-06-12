@@ -2,6 +2,7 @@ package actions.mailing;
 
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.ImageHtmlEmail;
 
 import javax.inject.Named;
@@ -13,7 +14,7 @@ public class MailService {
 
         try {
 
-            ImageHtmlEmail email = new ImageHtmlEmail();
+            HtmlEmail email = new HtmlEmail();
             email.setHostName(config.getHostname());
             email.setSmtpPort(config.getSmtpPort());
             email.setAuthenticator(new DefaultAuthenticator(config.getUsername(), config.getPassword()));

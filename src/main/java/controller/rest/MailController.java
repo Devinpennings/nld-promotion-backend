@@ -41,4 +41,10 @@ public class MailController {
         return Response.ok(this.mailService.addTemplate(dto)).build();
     }
 
+    @PUT
+    @Path("/templates")
+    public Response putTemplates(MailTemplateDTO dto) {
+        return Response.ok(this.mailService.updateTemplate(dto)).build();
+    }
+
 }

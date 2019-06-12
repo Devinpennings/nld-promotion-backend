@@ -8,22 +8,23 @@ import events.kafka.KafkaConsumerConfiguration;
 import model.fluid.FluidKeyValueModel;
 import model.fluid.FluidModel;
 import org.reflections.Reflections;
+import service.TriggerService;
 import util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Singleton
 public class EventService {
 
     @Inject
     private Logger logger;
+
+    @Inject
+    private TriggerService triggerService;
 
     private Set<EventConsumer> consumers;
     private Set<ActionHandler> handlers;
@@ -41,19 +42,10 @@ public class EventService {
         this.initConsumers(this.scanEventConsumers());
         this.initHandlers(this.scanActionHandlers());
 
-        Set<EventAction> eventActions = this.getEventActions();
+        Collection<EventAction> eventActions = this.getEventActions();
+        eventActions.forEach(this::setupEventActionHandler);
 
-        eventActions.forEach(ea -> {
-
-            Optional<EventConsumer> consumer = this.findEventConsumer(ea.getConsumerConfiguration());
-            consumer.ifPresent(eventConsumer -> eventConsumer.listen(ea.getConsumerConfiguration(), value -> {
-
-                Optional<ActionHandler> handler = this.findActionHandler(ea.getActionConfiguration());
-                handler.ifPresent(actionHandler -> actionHandler.handle(ea.getActionConfiguration(), value));
-
-            }));
-
-        });
+        this.triggerService.onNewEventAction(this::setupEventActionHandler);
 
         this.consumers.forEach(EventConsumer::start);
 
@@ -61,39 +53,56 @@ public class EventService {
 
     }
 
+    private void setupEventActionHandler(EventAction ea) {
+
+        Optional<EventConsumer> consumer = this.findEventConsumer(ea.getConsumerConfiguration());
+        consumer.ifPresent(eventConsumer -> eventConsumer.listen(ea.getConsumerConfiguration(), value -> {
+
+            Collection<ActionConfiguration> actions = this.triggerService.getActionsForTrigger(ea.getConsumerConfiguration().getId());
+            actions.forEach(a -> {
+
+                if (a.getEnabled()) {
+                    Optional<ActionHandler> handler = this.findActionHandler(a);
+                    handler.ifPresent(actionHandler -> actionHandler.handle(a, value));
+                }
+            });
+        }));
+    }
+
     public void stop() {
         this.consumers.forEach(EventConsumer::stop);
     }
 
-    public Set<EventAction> getEventActions() {
+    private Collection<EventAction> getEventActions() {
 
-        //TODO: This is mock
-        Set<EventAction> set = new HashSet<>();
-        Set<String> requiredFields = new HashSet<>(Arrays.asList(
-                "id",
-                "email",
-                "status",
-                "amount"
-        ));
-        FluidModel model = new FluidKeyValueModel(requiredFields);
-        set.add(
-            new EventAction(
-                new KafkaConsumerConfiguration("payments", "paymentCreated", model),
-                new MailingActionConfiguration(model, "email", new MailTemplate("Betaling geslaagd", "Deze template wordt gebruikt wanneer een betaling geslaagd is", "Betaling geslaagd!",
-                        "<html>\n" +
-                        " <head>\n" +
-                        "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
-                        "  <title>Next Level Dining | Email</title>\n" +
-                        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n" +
-                        "</head>\n" +
-                        "<body>\n" +
-                        "Status: {{status}} " +
-                        "Betaald: {{amount}}\n" +
-                        "</body>\n" +
-                        "</html>", requiredFields))
-            )
-        );
-        return set;
+        return this.triggerService.getEventActions();
+
+//        Set<EventAction> set = new HashSet<>();
+//        Set<String> requiredFields = new HashSet<>(Arrays.asList(
+//                "id",
+//                "email",
+//                "status",
+//                "amount"
+//        ));
+//        FluidKeyValueModel model = new FluidKeyValueModel(requiredFields);
+//        set.add(
+//            new EventAction(
+//                new KafkaConsumerConfiguration("Betaling geslaagd", "Deze trigger wordt uitgevoerd wanneer een betaling geslaagd is.", "default", "paymentCreated", model),
+//                new MailingActionConfiguration(model, "email", new MailTemplate("Betaling geslaagd", "Deze template wordt gebruikt wanneer een betaling geslaagd is", "Betaling geslaagd!",
+//                        "<html>\n" +
+//                        " <head>\n" +
+//                        "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
+//                        "  <title>Next Level Dining | Email</title>\n" +
+//                        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n" +
+//                        "</head>\n" +
+//                        "<body>\n" +
+//                        "Status: {{status}} " +
+//                        "Betaald: {{amount}}\n" +
+//                        "</body>\n" +
+//                        "</html>", requiredFields))
+//            )
+//        );
+//        return set;
     }
 
     public Set<Class<? extends EventConsumer>> scanEventConsumers() {
@@ -132,4 +141,7 @@ public class EventService {
         types.forEach(type -> this.handlers.add(CDI.current().select(type).get()));
     }
 
+    public Collection<EventConsumer> getEventConsumers() {
+        return this.consumers;
+    }
 }

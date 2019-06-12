@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 public class KafkaConsumer implements EventConsumer {
 
     private static final String id = "47e05d7a-d44b-4c15-8a0f-1feeb5062358";
+    private static final String title = "Kafka";
+    private static final String description = "Kafka queue verbruiker.";
 
     @Inject
     private Logger logger;
@@ -32,6 +34,18 @@ public class KafkaConsumer implements EventConsumer {
     @Inject
     @Property("kafka.group")
     private String group;
+
+    @Inject
+    @Property("kafka.username")
+    private String username;
+
+    @Inject
+    @Property("kafka.password")
+    private String password;
+
+    @Inject
+    @Property("kafka.prefix")
+    private String prefix;
 
     private org.apache.kafka.clients.consumer.KafkaConsumer<String, String> kafkaConsumer;
     private Map<KafkaConsumerConfiguration, Set<Callback<FluidModel>>> callbacks;
@@ -51,7 +65,8 @@ public class KafkaConsumer implements EventConsumer {
         }
 
         this.running = true;
-        List<String> topics = this.getEventsAsStringList();
+        Set<String> topics = this.getEventsAsStringList();
+        topics.add(this.prefix + "default");
         this.kafkaConsumer.subscribe(topics);
 
         new Thread(() -> {
@@ -109,6 +124,13 @@ public class KafkaConsumer implements EventConsumer {
 
     public void ignore(ConsumerConfiguration event) {
 
+        if (event.getClass() != KafkaConsumerConfiguration.class) {
+            throw new NotSupportedException("Configuration type not supported");
+        }
+
+        Set<Callback<FluidModel>> callbacks = this.callbacks.get(event);
+        callbacks.clear();
+
     }
 
     @Override
@@ -123,13 +145,23 @@ public class KafkaConsumer implements EventConsumer {
 
     @Override
     public String getId() {
-        return null;
+        return id;
     }
 
-    private List<String> getEventsAsStringList() {
+    @Override
+    public String getTitle() {
+        return title;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    private Set<String> getEventsAsStringList() {
         return this.callbacks.keySet().stream()
-                                .map(KafkaConsumerConfiguration::getTopicName)
-                                .collect(Collectors.toList());
+                                .map(kafkaConsumerConfiguration -> this.prefix + kafkaConsumerConfiguration.getTopicName())
+                                .collect(Collectors.toSet());
     }
 
     private void initKafkaConsumer() {
@@ -141,6 +173,18 @@ public class KafkaConsumer implements EventConsumer {
         props.put("auto.commit.interval.ms", "1000");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+        if (this.username != null && !this.username.equals("") && this.password != null && !this.password.equals("")) {
+
+            String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
+            String jaasCfg = String.format(jaasTemplate, this.username, this.password);
+
+            props.put("security.protocol", "SASL_SSL");
+            props.put("sasl.mechanism", "SCRAM-SHA-256");
+            props.put("sasl.jaas.config", jaasCfg);
+
+        }
+
         this.kafkaConsumer = new org.apache.kafka.clients.consumer.KafkaConsumer<>(props);
 
     }

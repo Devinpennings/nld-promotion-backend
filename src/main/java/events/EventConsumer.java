@@ -19,4 +19,8 @@ public interface EventConsumer {
 
     String getId();
 
+    String getTitle();
+
+    String getDescription();
+
 }
