@@ -73,12 +73,13 @@ public class KafkaConsumer implements EventConsumer {
             while (this.running) {
                 ConsumerRecords<String, String> records = this.kafkaConsumer.poll(Duration.ofMillis(1000));
                 for (ConsumerRecord<String, String> record : records) {
+                    this.logger.debug("Incoming message on topic: " + record.topic() + " with key: " + record.key());
                     // Get the callback collections
                     // Filter by topic
                     // Filter by event tame
                     // For all callbacks call with the event
                     for (KafkaConsumerConfiguration ks : this.callbacks.keySet()) {
-                        if (ks.getTopicName().equals(record.topic())) {
+                        if ((this.prefix + ks.getTopicName()).equals(record.topic())) {
                             if (ks.getEventName().equals(record.key())) {
                                 this.callbacks.get(ks).forEach(cb ->
                                 {

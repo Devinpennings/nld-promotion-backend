@@ -38,23 +38,21 @@ public class MailApplication {
         this.service.start();
 
         Set<String> requiredFields = new HashSet<>(Arrays.asList(
-                "id",
-                "email",
-                "status",
-                "amount"
+                "deliveryTime",
+                "email"
         ));
         FluidModel model = new FluidKeyValueModel(requiredFields);
         ConsumerConfiguration consumerConfiguration = this.triggerService.add(
                 new KafkaConsumerConfiguration(
-                        "Betaling geslaagd",
-                        "Deze trigger wordt uitgevoerd   wanneer een betaling geslaagd is.",
+                        "Bestelling geplaatst",
+                        "Deze trigger wordt uitgevoerd wanneer een bestelling geplaatst is.",
                         "default",
-                        "paymentCreated",
+                        "deliveryConfirmed",
                         model));
 
         this.triggerService.add(new MailingActionConfiguration(
                 model, "email",
-                new MailTemplate("Betaling geslaagd", "Deze template wordt gebruikt wanneer een betaling geslaagd is", "Betaling geslaagd!",
+                new MailTemplate("Bestelling geplaatst", "Deze template wordt gebruikt wanneer een bestelling geplaatst is", "Bestelling geslaagd!",
                 "<html>\n" +
                         " <head>\n" +
                         "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n" +
@@ -62,8 +60,7 @@ public class MailApplication {
                         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n" +
                         "</head>\n" +
                         "<body>\n" +
-                        "Status: {{status}} " +
-                        "Betaald: {{amount}}\n" +
+                        "Uw bestelling is geplaatst, geschatte leveringstijd is: {{deliveryTime}} " +
                         "</body>\n" +
                         "</html>", requiredFields)),
                 consumerConfiguration.getId());

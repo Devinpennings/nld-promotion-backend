@@ -79,7 +79,7 @@ public class MailTemplate extends Model {
 
     public void seed(Map<String, Object> values) throws Exception {
 
-        if (!values.values().stream().allMatch(k -> k instanceof  String || Primitives.isWrapperType(k.getClass()) || Primitives.allPrimitiveTypes().contains(k.getClass()))) {
+        if (!values.values().stream().allMatch(k -> k == null || k instanceof  String || Primitives.isWrapperType(k.getClass()) || Primitives.allPrimitiveTypes().contains(k.getClass()))) {
             throw new Exception("Failed to parse incoming data, incoming data types are not of expected type.");
         }
 
@@ -89,7 +89,11 @@ public class MailTemplate extends Model {
 
         for (String key : this.fields) {
 
-            this.parameters.put(key, values.get(key).toString());
+            if (values.get(key) != null) {
+                this.parameters.put(key, values.get(key).toString());
+            } else {
+                this.parameters.put(key, null);
+            }
 
         }
 

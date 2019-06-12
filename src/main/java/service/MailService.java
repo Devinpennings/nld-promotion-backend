@@ -3,7 +3,6 @@ package service;
 import actions.mailing.MailTemplate;
 import data.jpa.MailTemplateJPADAO;
 import dto.MailTemplateDTO;
-import javafx.util.Builder;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
